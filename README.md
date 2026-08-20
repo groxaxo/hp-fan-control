@@ -1,63 +1,51 @@
-# HP 14s-dq2079tu Fan Control
+# HP 14s-dq2079tu Thermal Control
 
-This repository contains configuration files and instructions for improving thermal management and fan control on the HP 14s-dq2079tu laptop running Linux.
+Thermald configuration and an installer for improving passive thermal
+management on the HP 14s-dq2079tu laptop running Linux. The configuration
+adjusts processor and fan cooling influence at 55 C, 65 C, and 75 C; it does
+not directly implement a custom fan-control daemon.
 
-## Problem
+## Important limitation
 
-The HP 14s-dq2079tu laptop may experience issues with fan control under Linux, leading to high CPU temperatures and thermal throttling.
+The `thermal-conf.xml` file uses Linux cooling-device indices such as `0`, `5`,
+and `8`. Those indices can differ across kernels, firmware, and other laptop
+models. Inspect the available thermal zones and cooling devices before using
+this configuration, and do not apply it to another laptop without adapting it.
 
-## Solution
+## Install
 
-We've created a custom thermal configuration file for the `thermald` daemon that helps manage CPU temperatures by:
+The installer requires root privileges, installs `thermald` if needed, copies
+the configuration into `/etc/thermald/`, and restarts the service:
 
-1. Setting appropriate temperature thresholds for the CPU
-2. Controlling CPU throttling to manage heat generation
-3. Indirectly influencing fan behavior through temperature management
-
-## Files
-
-- `thermal-conf.xml`: Custom configuration file for thermald with temperature thresholds at 55°C, 65°C, and 75°C
-- `install.sh`: Installation script to set up the configuration
-
-## Installation
-
-1. Install thermald if not already installed:
-   ```
-   sudo apt-get update
-   sudo apt-get install -y thermald
-   ```
-
-2. Copy the configuration file:
-   ```
-   sudo mkdir -p /etc/thermald
-   sudo cp thermal-conf.xml /etc/thermald/
-   ```
-
-3. Restart thermald:
-   ```
-   sudo systemctl restart thermald
-   ```
-
-## Monitoring
-
-You can monitor your CPU temperature using the `sensors` command:
+```bash
+sudo ./install.sh
 ```
+
+Review the file before installation if you have custom thermald settings. The
+installer overwrites `/etc/thermald/thermal-conf.xml`.
+
+## Monitor and troubleshoot
+
+Install the sensor tools and inspect temperatures:
+
+```bash
+sudo apt-get install lm-sensors
 sensors
+sudo systemctl status thermald
+sudo journalctl -u thermald
 ```
 
-## Additional Recommendations
+If the service rejects the configuration or the fan behavior does not improve,
+restore the previous configuration and inspect the system's actual thermal-zone
+and cooling-device mapping. This repository cannot guarantee fan behavior across
+firmware revisions.
 
-1. Use a laptop cooling pad for better airflow
-2. Clean your laptop's vents regularly
-3. Update your BIOS to the latest version
-4. Consider repasting the CPU if temperatures remain high
-5. Install TLP for better power management:
-   ```
-   sudo apt-get install tlp
-   sudo systemctl enable tlp
-   sudo systemctl start tlp
-   ```
+## Additional cooling measures
+
+Keep the vents clean, use a stable cooling surface, update the BIOS when
+appropriate, and consider TLP for power-management policy. These are separate
+from this repository's thermald configuration.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT. See [LICENSE](LICENSE).
